@@ -1,0 +1,6 @@
+domain: 196ikuchil.github.io
+layout:
+- go.kubebuilder.io/v3
+projectName: markdown-view
+repo: github.com/196Ikuchil/markdown-view
+version: "3"

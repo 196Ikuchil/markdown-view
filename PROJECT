@@ -3,4 +3,14 @@ layout:
 - go.kubebuilder.io/v3
 projectName: markdown-view
 repo: github.com/196Ikuchil/markdown-view
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: 196ikuchil.github.io
+  group: view
+  kind: MarkdownView
+  path: github.com/196Ikuchil/markdown-view/api/v1
+  version: v1
 version: "3"

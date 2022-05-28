@@ -1,0 +1,6 @@
+apiVersion: view.196ikuchil.github.io/v1
+kind: MarkdownView
+metadata:
+  name: markdownview-sample
+spec:
+  # TODO(user): Add fields here

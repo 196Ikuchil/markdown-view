@@ -27,15 +27,15 @@ import (
 type MarkdownViewSpec struct {
 	//+kubebuilder:validation:Required
 	//+kubebuilder:validation:MinProperties=1
-	Markdowns map[string]string `json:"markdowns,omitempty`
+	Markdowns map[string]string `json:"markdowns,omitempty"`
 
 	// Replicas is the number of viewrs.
 	//+kubebuilder:default=1
 	//+optional
-	Replicas int32 `json:"replicas,omitempty`
+	Replicas int32 `json:"replicas,omitempty"`
 
 	//+optional
-	ViewerImage string `json:"viewerImage,omitempty`
+	ViewerImage string `json:"viewerImage,omitempty"`
 }
 
 // MarkdownViewStatus defines the observed state of MarkdownView

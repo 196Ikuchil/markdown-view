@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -178,4 +179,137 @@ func (r *MarkdownViewReconciler) reconcileService(ctx context.Context, mdView vi
 
 	logger.Info("reconcile Service successfully", "name", mdView.Name)
 	return nil
+}
+
+func (r *MarkdownViewReconciler) reconcileDeployment(ctx context.Context, mdView viewv1.MarkdownView) error {
+	logger := log.FromContext(ctx)
+
+	depName := "viewer-" + mdView.Name
+	viewerImage := constants.DefaultViewerImage
+	if len(mdView.Spec.ViewerImage) != 0 {
+		viewerImage = mdView.Spec.ViewerImage
+	}
+
+	owner, err := ownerRef(mdView, r.Scheme)
+	if err != nil {
+		return err
+	}
+
+	dep := appsv1apply.Deployment(depName, mdView.Namespace).
+		WithLabels(labelSet(mdView)).
+		WithOwnerReferences(owner).
+		WithSpec(appsv1apply.DeploymentSpec().
+			WithReplicas(mdView.Spec.Replicas).
+			WithSelector(metav1apply.LabelSelector().WithMatchLabels(labelSet(mdView))).
+			WithTemplate(corev1apply.PodTemplateSpec().
+				WithLabels(labelSet(mdView)).
+				WithSpec(corev1apply.PodSpec().
+					WithContainers(corev1apply.Container().
+						WithName(constants.ViewerName).
+						WithImage(viewerImage).
+						WithImagePullPolicy(corev1.PullIfNotPresent).
+						WithCommand("mdbook").
+						WithArgs("serve", "--hostname", "0.0.0.0").
+						WithVolumeMounts(corev1apply.VolumeMount().
+							WithName("markdowns").
+							WithMountPath("/book/src"),
+						).
+						WithPorts(corev1apply.ContainerPort().
+							WithName("http").
+							WithProtocol(corev1.ProtocolTCP).
+							WithContainerPort(3000),
+						).
+						WithLivenessProbe(corev1apply.Probe().
+							WithHTTPGet(corev1apply.HTTPGetAction().
+								WithPort(intstr.FromString("http")).
+								WithPath("/").
+								WithScheme(corev1.URISchemeHTTP),
+							),
+						).
+						WithReadinessProbe(corev1apply.Probe().
+							WithHTTPGet(corev1apply.HTTPGetAction().
+								WithPort(intstr.FromString("http")).
+								WithPath("/").
+								WithScheme(corev1.URISchemeHTTP),
+							),
+						),
+					).
+					WithVolumes(corev1apply.Volume().
+						WithName("markdowns").
+						WithConfigMap(corev1apply.ConfigMapVolumeSource().
+							WithName("markdowns-" + mdView.Name),
+						),
+					),
+				),
+			),
+		)
+
+	obj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(dep)
+	if err != nil {
+		return err
+	}
+	patch := &unstructured.Unstructured{
+		Object: obj,
+	}
+
+	var current appsv1.Deployment
+	err = r.Get(ctx, client.ObjectKey{Namespace: mdView.Namespace, Name: depName}, &current)
+	if err != nil && !errors.IsNotFound(err) {
+		return err
+	}
+
+	currApplyConfig, err := appsv1apply.ExtractDeployment(&current, constants.ControllerName)
+	if err != nil {
+		return err
+	}
+
+	if equality.Semantic.DeepEqual(dep, currApplyConfig) {
+		return nil
+	}
+
+	err = r.Patch(ctx, patch, client.Apply, &client.PatchOptions{
+		FieldManager: constants.ControllerName,
+		Force:        pointer.Bool(true),
+	})
+
+	if err != nil {
+		logger.Error(err, "unable to create or update Deployment")
+		return err
+	}
+	logger.Info("reconcile Deployment successfully", "name", mdView.Name)
+	return nil
+}
+
+func (r *MarkdownViewReconciler) updateStatus(ctx context.Context, mdView viewv1.MarkdownView) (ctrl.Result, error) {
+	var dep appsv1.Deployment
+	err := r.Get(ctx, client.ObjectKey{Namespace: mdView.Namespace, Name: "viewer-" + mdView.Name}, &dep)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	var status viewv1.MarkdownViewStatus
+	if dep.Status.AvailableReplicas == 0 {
+		status = viewv1.MarkdownViewNotReady
+	} else if dep.Status.AvailableReplicas == mdView.Spec.Replicas {
+		status = viewv1.MarkdownViewHealthy
+	} else {
+		status = viewv1.MarkdownViewAvailable
+	}
+
+	if mdView.Status != status {
+		mdView.Status = status
+		r.setMetrics(mdView)
+
+		r.Recorder.Event(&mdView, corev1.EventTypeNormal, "Updated", fmt.Sprintf("MarkdownView(%s:%s) updated: %s", mdView.Namespace, mdView.Name, mdView.Status))
+
+		err = r.Status().Update(ctx, &mdView)
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+	}
+
+	if mdView.Status != viewv1.MarkdownViewHealthy {
+		return ctrl.Result{Requeue: true}, nil
+	}
+	return ctrl.Result{}, nil
 }

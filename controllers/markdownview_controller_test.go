@@ -5,11 +5,12 @@ import (
 	"errors"
 	"time"
 
+	viewv1 "github.com/196Ikuchil/markdown-view/api/v1"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	viewv1 "github.com/zoetrope/markdown-view/api/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -123,3 +124,20 @@ var _ = Describe("MarkdownView controller", func() {
 	})
 
 })
+
+func newMarkdownView() *viewv1.MarkdownView {
+	return &viewv1.MarkdownView{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "sample",
+			Namespace: "test",
+		},
+		Spec: viewv1.MarkdownViewSpec{
+			Markdowns: map[string]string{
+				"SUMMARY.md": `summary`,
+				"page1.md":   `page1`,
+			},
+			Replicas:    3,
+			ViewerImage: "peaceiris/mdbook:0.4.10",
+		},
+	}
+}

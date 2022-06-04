@@ -20,29 +20,33 @@ import (
 	"context"
 	"fmt"
 
+	viewv1 "github.com/196Ikuchil/markdown-view/api/v1"
+	"github.com/196Ikuchil/markdown-view/pkg/constants"
+	"github.com/196Ikuchil/markdown-view/pkg/metrics"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	appsv1apply "k8s.io/client-go/applyconfigurations/apps/v1"
 	corev1apply "k8s.io/client-go/applyconfigurations/core/v1"
+	metav1apply "k8s.io/client-go/applyconfigurations/meta/v1"
+	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/pointer"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-
-	viewv1 "github.com/196Ikuchil/markdown-view/api/v1"
-	"github.com/196Ikuchil/markdown-view/pkg/metrics"
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
-	appsv1apply "k8s.io/client-go/applyconfigurations/apps/v1"
 )
 
 // MarkdownViewReconciler reconciles a MarkdownView object
 type MarkdownViewReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme   *runtime.Scheme
+	Recorder record.EventRecorder
 }
 
 //+kubebuilder:rbac:groups=view.196ikuchil.github.io,resources=markdownviews,verbs=get;list;watch;create;update;patch;delete
@@ -338,4 +342,28 @@ func (r *MarkdownViewReconciler) removeMetrics(mdView viewv1.MarkdownView) {
 	metrics.NotReadyVec.DeleteLabelValues(mdView.Name, mdView.Name)
 	metrics.AvailableVec.DeleteLabelValues(mdView.Name, mdView.Name)
 	metrics.HealthyVec.DeleteLabelValues(mdView.Name, mdView.Name)
+}
+
+func labelSet(mdView viewv1.MarkdownView) map[string]string {
+	labels := map[string]string{
+		constants.LabelAppName:     constants.ViewerName,
+		constants.LabelAppInstance: mdView.Name,
+		constants.LabelAppCreateBy: constants.ControllerName,
+	}
+	return labels
+}
+
+func ownerRef(mdView viewv1.MarkdownView, scheme *runtime.Scheme) (*metav1apply.OwnerReferenceApplyConfiguration, error) {
+	gvk, err := apiutil.GVKForObject(&mdView, scheme)
+	if err != nil {
+		return nil, err
+	}
+	ref := metav1apply.OwnerReference().
+		WithAPIVersion(gvk.GroupVersion().String()).
+		WithKind(gvk.Kind).
+		WithName(mdView.Name).
+		WithUID(mdView.GetUID()).
+		WithBlockOwnerDeletion(true).
+		WithController(true)
+	return ref, nil
 }

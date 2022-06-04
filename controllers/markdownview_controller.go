@@ -33,7 +33,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	viewv1 "github.com/196Ikuchil/markdown-view/api/v1"
+	"github.com/196Ikuchil/markdown-view/pkg/metrics"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	appsv1apply "k8s.io/client-go/applyconfigurations/apps/v1"
 )
 
 // MarkdownViewReconciler reconciles a MarkdownView object
@@ -98,7 +101,7 @@ func (r *MarkdownViewReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&viewv1.MarkdownView{}).
 		Owns(&corev1.ConfigMap{}).
-		Owns(&corev1.Deployment{}).
+		Owns(&appsv1.Deployment{}).
 		Owns(&corev1.Service{}).
 		Complete(r)
 }
@@ -312,4 +315,27 @@ func (r *MarkdownViewReconciler) updateStatus(ctx context.Context, mdView viewv1
 		return ctrl.Result{Requeue: true}, nil
 	}
 	return ctrl.Result{}, nil
+}
+
+func (r *MarkdownViewReconciler) setMetrics(mdView viewv1.MarkdownView) {
+	switch mdView.Status {
+	case viewv1.MarkdownViewNotReady:
+		metrics.NotReadyVec.WithLabelValues(mdView.Name, mdView.Name).Set(1)
+		metrics.AvailableVec.WithLabelValues(mdView.Name, mdView.Name).Set(0)
+		metrics.HealthyVec.WithLabelValues(mdView.Name, mdView.Name).Set(0)
+	case viewv1.MarkdownViewAvailable:
+		metrics.NotReadyVec.WithLabelValues(mdView.Name, mdView.Name).Set(0)
+		metrics.AvailableVec.WithLabelValues(mdView.Name, mdView.Name).Set(1)
+		metrics.HealthyVec.WithLabelValues(mdView.Name, mdView.Name).Set(0)
+	case viewv1.MarkdownViewHealthy:
+		metrics.NotReadyVec.WithLabelValues(mdView.Name, mdView.Name).Set(0)
+		metrics.AvailableVec.WithLabelValues(mdView.Name, mdView.Name).Set(0)
+		metrics.HealthyVec.WithLabelValues(mdView.Name, mdView.Name).Set(1)
+	}
+}
+
+func (r *MarkdownViewReconciler) removeMetrics(mdView viewv1.MarkdownView) {
+	metrics.NotReadyVec.DeleteLabelValues(mdView.Name, mdView.Name)
+	metrics.AvailableVec.DeleteLabelValues(mdView.Name, mdView.Name)
+	metrics.HealthyVec.DeleteLabelValues(mdView.Name, mdView.Name)
 }

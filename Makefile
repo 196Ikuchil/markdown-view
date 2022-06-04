@@ -55,9 +55,10 @@ fmt: ## Run go fmt against code.
 vet: ## Run go vet against code.
 	go vet ./...
 
-.PHONY: test
-test: manifests generate fmt vet envtest ## Run tests.
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
+#! [test]
+test: manifests generate fmt vet setup-envtest ## Run tests.
+	source <($(SETUP_ENVTEST) use -p env); go test ./... -coverprofile cover.out
+#! [test]
 
 ##@ Build
 
@@ -131,3 +132,10 @@ $(CONTROLLER_GEN): $(LOCALBIN)
 envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
 $(ENVTEST): $(LOCALBIN)
 	GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+
+SETUP_ENVTEST := $(shell pwd)/bin/setup-envtest
+.PHONY: setup-envtest
+setup-envtest: ## Download setup-envtest locally if necessary
+    # see https://github.com/kubernetes-sigs/controller-runtime/tree/master/tools/setup-envtest
+    GOBIN=$(shell pwd)/bin go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+

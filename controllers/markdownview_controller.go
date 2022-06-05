@@ -20,9 +20,9 @@ import (
 	"context"
 	"fmt"
 
-	viewv1 "github.com/196Ikuchil/markdown-view/api/v1"
-	"github.com/196Ikuchil/markdown-view/pkg/constants"
-	"github.com/196Ikuchil/markdown-view/pkg/metrics"
+	viewv1 "github.com/196ikuchil/markdown-view/api/v1"
+	"github.com/196ikuchil/markdown-view/pkg/constants"
+	"github.com/196ikuchil/markdown-view/pkg/metrics"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"

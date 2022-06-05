@@ -2,7 +2,7 @@ domain: 196ikuchil.github.io
 layout:
 - go.kubebuilder.io/v3
 projectName: markdown-view
-repo: github.com/196Ikuchil/markdown-view
+repo: github.com/196ikuchil/markdown-view
 resources:
 - api:
     crdVersion: v1
@@ -11,7 +11,7 @@ resources:
   domain: 196ikuchil.github.io
   group: view
   kind: MarkdownView
-  path: github.com/196Ikuchil/markdown-view/api/v1
+  path: github.com/196ikuchil/markdown-view/api/v1
   version: v1
   webhooks:
     defaulting: true

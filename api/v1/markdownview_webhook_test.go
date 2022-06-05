@@ -16,6 +16,7 @@ import (
 
 func mutateTest(before string, after string) {
 	ctx := context.Background()
+
 	y, err := os.ReadFile(before)
 	Expect(err).NotTo(HaveOccurred())
 	d := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(y), 4096)
@@ -62,13 +63,16 @@ func validateTest(file string, valid bool) {
 	}
 }
 
-var _ = Describe("MarkdownView webhook", func() {
-	Context("utating", func() {
+var _ = Describe("MarkdownView Webhook", func() {
+	Context("mutating", func() {
 		It("should mutate a MarkdownView", func() {
 			mutateTest(filepath.Join("testdata", "mutating", "before.yaml"), filepath.Join("testdata", "mutating", "after.yaml"))
 		})
 	})
 	Context("validating", func() {
+		It("should create a valid MarkdownView", func() {
+			validateTest(filepath.Join("testdata", "validating", "valid.yaml"), true)
+		})
 		It("should not create invalid MarkdownViews", func() {
 			validateTest(filepath.Join("testdata", "validating", "empty-markdowns.yaml"), false)
 			validateTest(filepath.Join("testdata", "validating", "invalid-replicas.yaml"), false)

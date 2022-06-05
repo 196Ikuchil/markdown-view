@@ -1,10 +1,10 @@
-apiVersion: view.196Ikuchil.github.io/v1
+apiVersion: view.196ikuchil.github.io/v1
 kind: MarkdownView
 metadata:
   name: without-summary
   namespace: default
   annotations:
-    message: 'admission webhook "vmarkdownview.kb.io" denied the request: MarkdownView.view.196Ikuchil.github.io "without-summary" is invalid: spec.markdowns: Required value: markdowns must have SUMMARY.md.'
+    message: 'admission webhook "vmarkdownview.kb.io" denied the request: MarkdownView.view.196ikuchil.github.io "without-summary" is invalid: spec.markdowns: Required value: markdowns must have SUMMARY.md'
 spec:
   markdowns:
     page1.md: |

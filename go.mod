@@ -1,4 +1,4 @@
-module github.com/196Ikuchil/markdown-view
+module github.com/196ikuchil/markdown-view
 
 go 1.17
 

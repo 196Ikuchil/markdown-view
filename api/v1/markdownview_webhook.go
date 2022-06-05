@@ -17,7 +17,7 @@ limitations under the License.
 package v1
 
 import (
-	"github.com/196Ikuchil/markdown-view/pkg/constants"
+	"github.com/196ikuchil/markdown-view/pkg/constants"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"

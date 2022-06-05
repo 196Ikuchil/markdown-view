@@ -1,4 +1,4 @@
-apiVersion: view.196Ikuchil.github.io/v1
+apiVersion: view.196ikuchil.github.io/v1
 kind: MarkdownView
 metadata:
   name: mutating
@@ -15,4 +15,3 @@ spec:
       Content of page 1
   replicas: 1
   viewerImage: "peaceiris/mdbook:latest"
-  

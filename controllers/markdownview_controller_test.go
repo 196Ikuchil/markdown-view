@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	viewv1 "github.com/196Ikuchil/markdown-view/api/v1"
+	viewv1 "github.com/196ikuchil/markdown-view/api/v1"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	appsv1 "k8s.io/api/apps/v1"
@@ -18,6 +18,7 @@ import (
 )
 
 var _ = Describe("MarkdownView controller", func() {
+	//! [setup]
 	ctx := context.Background()
 	var stopFunc func()
 
@@ -65,7 +66,9 @@ var _ = Describe("MarkdownView controller", func() {
 		stopFunc()
 		time.Sleep(100 * time.Millisecond)
 	})
+	//! [setup]
 
+	//! [test]
 	It("should create ConfigMap", func() {
 		mdView := newMarkdownView()
 		err := k8sClient.Create(ctx, mdView)
@@ -75,7 +78,7 @@ var _ = Describe("MarkdownView controller", func() {
 		Eventually(func() error {
 			return k8sClient.Get(ctx, client.ObjectKey{Namespace: "test", Name: "markdowns-sample"}, &cm)
 		}).Should(Succeed())
-		Expect(cm.Data).Should(HaveKey("SUMARY.md"))
+		Expect(cm.Data).Should(HaveKey("SUMMARY.md"))
 		Expect(cm.Data).Should(HaveKey("page1.md"))
 	})
 
@@ -122,7 +125,7 @@ var _ = Describe("MarkdownView controller", func() {
 			return nil
 		}).Should(Succeed())
 	})
-
+	//! [test]
 })
 
 func newMarkdownView() *viewv1.MarkdownView {

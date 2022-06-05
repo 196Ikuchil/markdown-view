@@ -43,10 +43,11 @@ type MarkdownViewSpec struct {
 type MarkdownViewStatus string
 
 const (
-	MarkdownViewNotReady = MarkdownViewStatus("NotReady")
+	MarkdownViewNotReady  = MarkdownViewStatus("NotReady")
 	MarkdownViewAvailable = MarkdownViewStatus("Available")
-	MarkdownViewHealthy = MarkdownViewStatus("Healthy")
+	MarkdownViewHealthy   = MarkdownViewStatus("Healthy")
 )
+
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 //+kubebuilder:printcolumn:name="REPLOCAS",type="integer",JSONPath=".spec.replicas"
